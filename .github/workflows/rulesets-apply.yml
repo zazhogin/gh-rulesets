@@ -16,7 +16,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
-      Q_FULL: ${{ inputs.search_query }}
+      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+      QUERY: ${{ inputs.search_query }}
       CSV:    ${{ inputs.csv_path }}
     steps:
       - name: Checkout
@@ -49,14 +50,14 @@ jobs:
           echo "No repositories matched the search query."
           exit 1
 
-     # - name: Apply rulesets CSV
-     #   env:
-     #     GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
-     #   run: |
-     #     test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
-     #     split -l 50 repos.txt repos_chunk_
-     #     for f in repos_chunk_*; do
-     #       echo "Applying $CSV to chunk $f"
-     #       gh migrate-rulesets create "$ORG" $(cut -d/ -f2 "$f") -i "$CSV"
-     #     done
+      - name: Apply rulesets CSV
+        env:
+          GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+        run: |
+          test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
+          split -l 50 repos.txt repos_chunk_
+          for f in repos_chunk_*; do
+            echo "Applying $CSV to chunk $f"
+            gh migrate-rulesets create "$ORG" $(cut -d/ -f2 "$f") -i "$CSV"
+          done
 
