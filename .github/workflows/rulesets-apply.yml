@@ -45,16 +45,13 @@ jobs:
 
           COUNT=$(wc -l < repos.txt | tr -d ' ')
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
+          
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No repositories matched the search query."
+            exit 1
+          fi
 
-      - name: Fail if repo list is empty
-        if: ${{ steps.repos.outputs.found == '0' }}
-        run: |
-          echo "No repositories matched the search query."
-          exit 1
-
-      - name: Apply rulesets CSV
-        env:
-          GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+      - name: Apply rulesets
         run: |
           test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
           REPOS=$(paste -sd, repos.txt)
