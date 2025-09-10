@@ -9,6 +9,6 @@ jobs:
   apply:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
-      search_query: 'org:zazhogin in:name ansible archived:false fork:false'
+      search_query: 'org:digital-iq in:name gh-schedule archived:false fork:false'
       csv_path: rulesets/ansible-playbooks.csv
     secrets: inherit
