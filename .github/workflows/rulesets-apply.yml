@@ -26,7 +26,7 @@ jobs:
       - name: Install gh-migrate-rulesets
         run: |
           gh --version
-          gh extension install katiem0/gh-migrate-rulesets
+          gh extension install zazhogin/gh-migrate-rulesets
 
       - name: Resolve repositories by query
         id: repos
