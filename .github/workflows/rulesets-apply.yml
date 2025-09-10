@@ -16,12 +16,17 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN }}
       QUERY: ${{ inputs.search_query }}
       CSV:    ${{ inputs.csv_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Debug token (scopes & host)
+        run: |
+          gh --version
+          gh auth status  
 
       - name: Install gh-migrate-rulesets
         run: |
