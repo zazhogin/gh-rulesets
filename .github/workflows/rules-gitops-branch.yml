@@ -1,0 +1,17 @@
+name: GitOps branch rulesets
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+
+env:
+  SEARCH_QUERY: 'org:digital-iq in:name gitops-branch archived:false fork:false'
+
+jobs:
+  apply:
+    uses: ./.github/workflows/rulesets-apply.yml
+    with:
+      search_query: ${{ env.SEARCH_QUERY }}
+      csv_path: policies/gitops-branch.csv
+    secrets: inherit

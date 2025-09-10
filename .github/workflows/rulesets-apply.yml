@@ -1,0 +1,62 @@
+name: Apply rulesets by query
+
+on:
+  workflow_call:
+    inputs:
+      search_query:
+        description: 'Query for gh search repos (e.g., "org:digital-iq is:private")'
+        required: true
+        type: string
+      csv_path:
+        description: "Path to rulesets CSV"
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      Q_FULL: ${{ inputs.search_query }}
+      CSV:    ${{ inputs.csv_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install gh-migrate-rulesets
+        run: |
+          gh --version
+          gh extension install katiem0/gh-migrate-rulesets
+
+      - name: Resolve repositories by query
+        id: repos
+        run: |
+          echo "Query: $QUERY"
+          ORG=$(awk '{for(i=1;i<=NF;i++) if ($i ~ /^org:/){split($i,a,":"); print a[2]; exit}}' <<< "$QUERY")
+          if [ -z "$ORG" ]; then
+            echo "ERROR: the query must contain 'org:<org>' (e.g., 'org:li9 ...')."
+            exit 1
+          fi
+          echo "ORG=$ORG" >> $GITHUB_ENV
+
+          gh search repos "$QUERY" --json nameWithOwner -q '.[].nameWithOwner' | tee repos.txt
+
+          COUNT=$(wc -l < repos.txt | tr -d ' ')
+          echo "found=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if repo list is empty
+        if: ${{ steps.repos.outputs.found == '0' }}
+        run: |
+          echo "No repositories matched the search query."
+          exit 1
+
+     # - name: Apply rulesets CSV
+     #   env:
+     #     GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+     #   run: |
+     #     test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
+     #     split -l 50 repos.txt repos_chunk_
+     #     for f in repos_chunk_*; do
+     #       echo "Applying $CSV to chunk $f"
+     #       gh migrate-rulesets create "$ORG" $(cut -d/ -f2 "$f") -i "$CSV"
+     #     done
+
