@@ -43,8 +43,10 @@ jobs:
             exit 1
           fi
           echo "ORG=$ORG" >> $GITHUB_ENV
-
-          gh search repos "$QUERY" --json fullName -q '.[].fullName' | tee repos.txt
+          
+          gh search repos \
+            $QUERY \
+            --json fullName -q '.[].fullName' | tee repos.txt
 
           COUNT=$(wc -l < repos.txt | tr -d ' ')
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
