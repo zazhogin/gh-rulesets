@@ -10,5 +10,5 @@ jobs:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
       search_query: 'org:zazhogin in:name gitops-branch archived:false fork:false'
-      csv_path: policies/gitops-branch.csv
+      csv_path: rulesets/gitops-branch.csv
     secrets: inherit

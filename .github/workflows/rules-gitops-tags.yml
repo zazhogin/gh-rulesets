@@ -10,5 +10,5 @@ jobs:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
       search_query: 'org:zazhogin in:name gitops-tags archived:false fork:false'
-      csv_path: policies/gitops-tags.csv
+      csv_path: rulesets/gitops-tags.csv
     secrets: inherit
