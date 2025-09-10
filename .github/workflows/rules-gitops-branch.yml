@@ -9,6 +9,6 @@ jobs:
   apply:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
-      search_query: 'org:digital-iq in:name gitops-branch archived:false fork:false'
+      search_query: 'org:zazhogin in:name gitops-branch archived:false fork:false'
       csv_path: policies/gitops-branch.csv
     secrets: inherit

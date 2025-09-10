@@ -34,7 +34,7 @@ jobs:
           echo "Query: $QUERY"
           ORG=$(awk '{for(i=1;i<=NF;i++) if ($i ~ /^org:/){split($i,a,":"); print a[2]; exit}}' <<< "$QUERY")
           if [ -z "$ORG" ]; then
-            echo "ERROR: the query must contain 'org:<org>' (e.g., 'org:li9 ...')."
+            echo "ERROR: the query must contain 'org:<org>' (e.g., 'org:digital-iq ...')."
             exit 1
           fi
           echo "ORG=$ORG" >> $GITHUB_ENV
