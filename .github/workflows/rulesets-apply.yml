@@ -46,7 +46,7 @@ jobs:
           
           gh search repos \
             $QUERY \
-            --json fullName -q '.[].fullName' | tee repos.txt
+            --json name -q '.[].name' | tee repos.txt
 
           COUNT=$(wc -l < repos.txt | tr -d ' ')
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
@@ -62,9 +62,7 @@ jobs:
           GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
         run: |
           test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
-          split -l 50 repos.txt repos_chunk_
-          for f in repos_chunk_*; do
-            echo "Applying $CSV to chunk $f"
-            gh migrate-rulesets create "$ORG" $(cut -d/ -f2 "$f") -i "$CSV"
-          done
+          REPOS=$(paste -sd, repos.txt)
+          echo "Applying $CSV to: $REPOS"
+          gh migrate-rules create -f "$CSV" -R "$REPOS" "$ORG"
 
