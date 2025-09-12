@@ -4,12 +4,17 @@ This repository contains GitHub Actions workflows that automatically apply
 **repository rulesets** and **Actions settings** to multiple repositories
 based on a search query.
 
+## Prerequisites
+
+Make sure to [create a Personal Access Token](https://github.com/settings/tokens) with the admin scopes named **`POLICY_TOKEN`**.
+
 ## Rulesets
 
 1. Create a ruleset manually in the GitHub UI (`Settings → Rulesets`).
 2. Export it to JSON using UI
 3. Add the JSON file under `policies/`.
-4. Reference it in the workflow (`rulesets-apply.yml`) with a `search_query`.
+4. Reference it in the workflow (`rulesets-apply.yml`) with a `search_query` to specify repositories.
+Multiple rulesets supported.
 
 The workflow will:
 - Find repositories matching the query (e.g. `org:digital-iq in:name ansible archived:false fork:false`).
