@@ -4,9 +4,7 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": [
-        "refs/heads/*"
-      ],
+      "include": ["refs/heads/*"],
       "exclude": []
     }
   },
@@ -14,7 +12,8 @@
     {
       "type": "branch_name_pattern",
       "parameters": {
-        "name_pattern": "^(dev|sbx|prd|feature\\/LI9INFRA-.*)$",
+        "name": "",
+        "pattern": "^(dev|sbx|prd|feature\\/LI9INFRA-.*)$",
         "operator": "regex",
         "negate": false
       }
