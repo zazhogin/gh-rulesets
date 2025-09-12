@@ -35,13 +35,15 @@ jobs:
 
             # Allow all actions & reusable workflows, enable Actions
             gh api -X PUT "/repos/${OWNER}/${REPO}/actions/permissions" \
-              -f enabled=true \
+              -H "Accept: application/vnd.github+json" \
+              -F enabled=true \
               -f allowed_actions=all \
               || echo "::warning::Failed to set actions permissions for ${FULL}"
 
             # Do NOT allow Actions to approve PRs
             gh api -X PUT "/repos/${OWNER}/${REPO}/actions/permissions/workflow" \
-              -f can_approve_pull_request_reviews=false \
+              -H "Accept: application/vnd.github+json" \
+              -F can_approve_pull_request_reviews=false \
               -f default_workflow_permissions=read \
               || echo "::warning::Failed to set workflow default permissions for ${FULL}"
 
