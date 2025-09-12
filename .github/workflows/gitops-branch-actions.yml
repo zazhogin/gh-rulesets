@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  QUERY: org:digital-iq in:name ^zazhogin-ansible archived:false fork:false
+  QUERY: org:digital-iq in:name zazhogin-ansible archived:false fork:false
 
 jobs:
   apply-actions:
