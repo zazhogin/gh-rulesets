@@ -23,15 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Policy
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "$POLICY" || { echo "Policy file not found: $POLICY"; exit 1; }
-          NAME=$(jq -r '.name' "$POLICY")
-          [ -n "$NAME" ] && [ "$NAME" != "null" ] || { echo "Policy JSON must contain .name"; exit 1; }
-          echo "POLICY_NAME=$NAME" >> $GITHUB_ENV
-
       - name: Resolve repositories
         id: repos
         shell: bash
@@ -64,7 +55,6 @@ jobs:
 
           paste -sd '|' policies_paths.txt  > policies_paths.txt.tmp && mv policies_paths.txt.tmp  policies_paths.txt
           paste -sd '|' policies_names.txt  > policies_names.txt.tmp && mv policies_names.txt.tmp  policies_names.txt
-      
 
       - name: Apply policies
         shell: bash
