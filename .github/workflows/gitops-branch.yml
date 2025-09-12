@@ -10,7 +10,5 @@ jobs:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
       search_query: org:digital-iq in:name ansible archived:false fork:false
-      policy_paths: |
-        policies/allowed-branch-names.json
-        policies/require-pr-for-dev.json
+      policy_paths: '["policies/allowed-branch-names.json","policies/require-pr-for-dev.json"]'
     secrets: inherit

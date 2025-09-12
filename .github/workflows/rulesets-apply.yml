@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t POLICIES < <(printf '%s\n' "$POLICIES_RAW" | sed '/^\s*$/d')
+          mapfile -t POLICIES < <(printf '%s' "$POLICIES_RAW" | jq -r '.[]')
           [ "${#POLICIES[@]}" -gt 0 ] || { echo "No policy paths provided."; exit 1; }
 
           : > policies_paths.txt
@@ -56,7 +56,7 @@ jobs:
           paste -sd '|' policies_paths.txt  > policies_paths.txt.tmp && mv policies_paths.txt.tmp  policies_paths.txt
           paste -sd '|' policies_names.txt  > policies_names.txt.tmp && mv policies_names.txt.tmp  policies_names.txt
 
-      - name: Apply policies
+      - name: Apply policies (create if missing)
         shell: bash
         run: |
           set -euo pipefail
