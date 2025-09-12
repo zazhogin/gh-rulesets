@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Query: $QUERY"
-          gh search repos $QUERY --json nameWithOwner -q '.[].nameWithOwner' > repos.txt
+          gh search repos $QUERY --json fullName -q '.[].fullName' > repos.txt
           COUNT=$(wc -l < repos.txt | tr -d ' ')
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
           [ "$COUNT" -gt 0 ] || { echo "No repositories matched the search query."; exit 1; }
