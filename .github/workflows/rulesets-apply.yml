@@ -1,4 +1,4 @@
-name: Apply rulesets by query
+name: Apply Rulesets
 
 on:
   workflow_call:
