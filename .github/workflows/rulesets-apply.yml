@@ -7,8 +7,8 @@ on:
         description: 'gh search repos query, e.g. org:digital-iq is:private'
         required: true
         type: string
-      policy_path:
-        description: 'Path to policy JSON, e.g. policies/ansible-playbooks.json'
+      policy_paths:
+        description: 'newline-separated list of policy JSON paths'
         required: true
         type: string
 
@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
-      QUERY:   ${{ inputs.search_query }}
-      POLICY:  ${{ inputs.policy_path }}
+      QUERY:         ${{ inputs.search_query }}
+      POLICIES_RAW:  ${{ inputs.policy_paths }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,24 +43,57 @@ jobs:
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
           [ "$COUNT" -gt 0 ] || { echo "No repositories matched the search query."; exit 1; }
 
-      - name: Apply Policy
+      - name: Parse policies
+        id: policies
         shell: bash
         run: |
           set -euo pipefail
+          mapfile -t POLICIES < <(printf '%s\n' "$POLICIES_RAW" | sed '/^\s*$/d')
+          [ "${#POLICIES[@]}" -gt 0 ] || { echo "No policy paths provided."; exit 1; }
+
+          : > policies_paths.txt
+          : > policies_names.txt
+
+          for P in "${POLICIES[@]}"; do
+            test -f "$P" || { echo "Policy file not found: $P"; exit 1; }
+            NAME=$(jq -r '.name // empty' "$P")
+            [ -n "$NAME" ] || { echo "Policy JSON must contain .name: $P"; exit 1; }
+            echo "$P"    >> policies_paths.txt
+            echo "$NAME" >> policies_names.txt
+          done
+
+          paste -sd '|' policies_paths.txt  > policies_paths.txt.tmp && mv policies_paths.txt.tmp  policies_paths.txt
+          paste -sd '|' policies_names.txt  > policies_names.txt.tmp && mv policies_names.txt.tmp  policies_names.txt
+      
+
+      - name: Apply policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          IFS='|' read -r -a POLICIES < policies_paths.txt
+          IFS='|' read -r -a POLICY_NAMES < policies_names.txt
+
           while IFS= read -r FULL; do
             OWNER="${FULL%/*}"; REPO="${FULL#*/}"
             echo "::group::${FULL}"
-            RS_ID=$(gh api "/repos/${OWNER}/${REPO}/rulesets?per_page=100" \
-                      --jq ".[] | select(.name==\"${POLICY_NAME}\") | .id" 2>/dev/null || true)
-            if [ -n "$RS_ID" ]; then
-              echo "[skip] ${FULL} :: ruleset \"${POLICY_NAME}\" already exists (id=${RS_ID})"
-              echo "::endgroup::"; continue
-            fi
-            if gh api -X POST "/repos/${OWNER}/${REPO}/rulesets" --input "$POLICY" >/dev/null 2>&1; then
-              echo "[created] ${FULL} :: ${POLICY_NAME}"
-            else
-              echo "::error::Create failed for ${FULL}"
-            fi
+
+            for i in "${!POLICIES[@]}"; do
+              P="${POLICIES[$i]}"
+              NAME="${POLICY_NAMES[$i]}"
+
+              RS_ID=$(gh api "/repos/${OWNER}/${REPO}/rulesets?per_page=100" \
+                        --jq ".[] | select(.name==\"${NAME}\") | .id" 2>/dev/null || true)
+              if [ -n "$RS_ID" ]; then
+                echo "[skip] ${FULL} :: ruleset \"${NAME}\" already exists (id=${RS_ID})"
+                continue
+              fi
+
+              if gh api -X POST "/repos/${OWNER}/${REPO}/rulesets" --input "$P" >/dev/null 2>&1; then
+                echo "[created] ${FULL} :: ${NAME}"
+              else
+                echo "::error::Create failed for ${FULL} (policy: ${P})"
+              fi
+            done
+
             echo "::endgroup::"
           done < repos.txt
-      
