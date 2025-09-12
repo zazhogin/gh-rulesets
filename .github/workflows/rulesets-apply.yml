@@ -4,57 +4,63 @@ on:
   workflow_call:
     inputs:
       search_query:
-        description: 'Query for gh search repos (e.g., "org:digital-iq is:private")'
+        description: 'gh search repos query, e.g. org:digital-iq is:private'
         required: true
         type: string
-      csv_path:
-        description: "Path to rulesets CSV"
+      policy_path:
+        description: 'Path to policy JSON, e.g. policies/ansible-playbooks.json'
         required: true
         type: string
 
 jobs:
-  run:
+  apply:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN }}
-      QUERY: ${{ inputs.search_query }}
-      CSV:    ${{ inputs.csv_path }}
+      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+      QUERY:   ${{ inputs.search_query }}
+      POLICY:  ${{ inputs.policy_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install gh-migrate-rulesets
+      - name: Validate Policy
+        shell: bash
         run: |
-          gh --version
-          gh extension install zazhogin/gh-migrate-rulesets
+          set -euo pipefail
+          test -f "$POLICY" || { echo "Policy file not found: $POLICY"; exit 1; }
+          NAME=$(jq -r '.name' "$POLICY")
+          [ -n "$NAME" ] && [ "$NAME" != "null" ] || { echo "Policy JSON must contain .name"; exit 1; }
+          echo "POLICY_NAME=$NAME" >> $GITHUB_ENV
 
-      - name: Resolve repositories by query
+      - name: Resolve repositories
         id: repos
+        shell: bash
         run: |
+          set -euo pipefail
           echo "Query: $QUERY"
-          ORG=$(awk '{for(i=1;i<=NF;i++) if ($i ~ /^org:/){split($i,a,":"); print a[2]; exit}}' <<< "$QUERY")
-          if [ -z "$ORG" ]; then
-            echo "ERROR: the query must contain 'org:<org>' (e.g., 'org:digital-iq ...')."
-            exit 1
-          fi
-          echo "ORG=$ORG" >> $GITHUB_ENV
-          
-          gh search repos \
-            $QUERY \
-            --json name -q '.[].name' | tee repos.txt
-
+          gh search repos $QUERY --json nameWithOwner -q '.[].nameWithOwner' > repos.txt
           COUNT=$(wc -l < repos.txt | tr -d ' ')
           echo "found=$COUNT" >> "$GITHUB_OUTPUT"
-          
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No repositories matched the search query."
-            exit 1
-          fi
+          [ "$COUNT" -gt 0 ] || { echo "No repositories matched the search query."; exit 1; }
 
-      - name: Apply rulesets
+      - name: Apply Policy
+        shell: bash
         run: |
-          test -f "$CSV" || (echo "CSV file not found: $CSV" && exit 1)
-          REPOS=$(paste -sd, repos.txt)
-          echo "Applying $CSV to: $REPOS"
-          gh migrate-rulesets create -f "$CSV" -R "$REPOS" "$ORG"
-
+          set -euo pipefail
+          while IFS= read -r FULL; do
+            OWNER="${FULL%/*}"; REPO="${FULL#*/}"
+            echo "::group::${FULL}"
+            RS_ID=$(gh api "/repos/${OWNER}/${REPO}/rulesets?per_page=100" \
+                      --jq ".[] | select(.name==\"${POLICY_NAME}\") | .id" 2>/dev/null || true)
+            if [ -n "$RS_ID" ]; then
+              echo "[skip] ${FULL} :: ruleset \"${POLICY_NAME}\" already exists (id=${RS_ID})"
+              echo "::endgroup::"; continue
+            fi
+            if gh api -X POST "/repos/${OWNER}/${REPO}/rulesets" --input "$POLICY" >/dev/null 2>&1; then
+              echo "[created] ${FULL} :: ${POLICY_NAME}"
+            else
+              echo "::error::Create failed for ${FULL}"
+            fi
+            echo "::endgroup::"
+          done < repos.txt
+      

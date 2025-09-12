@@ -1,4 +1,4 @@
-name: GitOps tags rulesets
+name: Ansible playbooks
 
 on:
   schedule:
@@ -9,6 +9,6 @@ jobs:
   apply:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
-      search_query: 'org:zazhogin in:name gitops-tags archived:false fork:false'
-      csv_path: rulesets/gitops-tags.csv
+      search_query: 'org:digital-iq in:name ansible archived:false fork:false'
+      policy_path: policies/ansible-playbooks.json
     secrets: inherit
