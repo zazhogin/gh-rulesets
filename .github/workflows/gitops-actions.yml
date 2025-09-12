@@ -1,0 +1,49 @@
+name: GitOps Actions
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+
+env:
+  QUERY: org:digital-iq in:name ansible archived:false fork:false
+
+jobs:
+  apply-actions:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh search repos $QUERY --json fullName -q '.[].fullName' > repos.txt
+          [ -s repos.txt ] || { echo "No repositories matched the search query."; exit 1; }
+
+      - name: Apply Actions
+        shell: bash
+        run: |
+          set -u
+          while IFS= read -r FULL; do
+            OWNER="${FULL%/*}"
+            REPO="${FULL#*/}"
+            echo "::group::${FULL}"
+
+            # Allow all actions & reusable workflows, enable Actions
+            gh api -X PUT "/repos/${OWNER}/${REPO}/actions/permissions" \
+              -f enabled=true \
+              -f allowed_actions=all \
+              || echo "::warning::Failed to set actions permissions for ${FULL}"
+
+            # Do NOT allow Actions to approve PRs
+            gh api -X PUT "/repos/${OWNER}/${REPO}/actions/permissions/workflow" \
+              -f can_approve_pull_request_reviews=false \
+              -f default_workflow_permissions=read \
+              || echo "::warning::Failed to set workflow default permissions for ${FULL}"
+
+            echo "::endgroup::"
+          done < repos.txt
