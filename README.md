@@ -1,14 +1,80 @@
-# GitHub Rulesets & Actions Policies Automation
+# GitHub Rulesets & Actions
 
-This repository contains GitHub Actions workflows that automatically apply
-**repository rulesets** and **Actions settings** to multiple repositories
-based on a search query.
+This repository automatically applies rulesets and Actions settings to repositories 
+based on a gh search query, on a schedule.
+
+---
 
 ## Prerequisites
 
-Make sure to [create a Personal Access Token](https://github.com/settings/tokens) with the admin scopes named **`POLICY_TOKEN`**.
+Make sure to [create a personal access token](https://github.com/settings/tokens) with the admin scopes named `POLICY_TOKEN`.
 
-## Rulesets
+---
+
+## How to create GitHub rulesets
+
+Rulesets являются JSON:
+
+```json
+{
+  "name": "Ruleset name",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    ...
+  },
+  "rules": [
+    {
+      ...
+    }
+  ]
+}
+```
+
+JSON имеет два основных раздела, conditions и rules. Маппинга conditions к rules нет. Если мы хотим написать разные rules на разные ветки, указанные в 
+conditions, придется создать два rulesets.
+
+Rulesets легко сгенерировать используя:
+
+1. Chat GPT, дополнительное обучение не требуется
+2. GitHub UI
+- Settings - Rules - Rulesets - New ruleset
+- Export ruleset
+
+![create-export-ruleset.png](docs/assets/create-export-ruleset.png)
+
+Rulesets example:
+
+```json
+{
+  "name": "Require PR for dev",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/dev"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request"
+    }
+  ]
+}
+```
+
+**NOTES:** Некоторые ruleset требуют Enterprise подписку GitHub, например для стандартизации имен веток.
+
+![enterprise-restrictions.png](docs/assets/enterprise-restrictions.png)
+
+---
+
+
+
+
 
 1. Create a ruleset manually in the GitHub UI (`Settings → Rulesets`).
 2. Export it to JSON using UI
