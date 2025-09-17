@@ -98,15 +98,27 @@ The workflow will:
 - Delete all existing rulest.
 - Apply the ruleset JSON if missing.
 
-## Actions Settings
+## How to create GitHub Actions REST API calls
 
-Rulesets do not cover **GitHub Actions settings**.  
-To manage these, we call the REST API directly with `gh api`.
+Rulesets do not cover GitHub Actions settings. To manage these, call the REST API directly with `gh api`.
+For example, allow all actions and reusable workflows:
 
-Examples:
-- Allow all actions and reusable workflows:
-  ```bash
-  gh api -X PUT /repos/<owner>/<repo>/actions/permissions \
-    --input - <<'JSON'
-  {"enabled":true,"allowed_actions":"all"}
-  JSON
+```bash
+gh api -X PUT /repos/<owner>/<repo>/actions/permissions \
+--input - <<'JSON'
+{"enabled":true,"allowed_actions":"all"}
+JSON
+```
+
+Visit [REST API endpoints for GitHub Actions permissions](https://docs.github.com/en/enterprise-server@3.16/rest/actions/permissions?apiVersion=2022-11-28) for more examples.
+
+## How to apply GitHub Actions REST API calls
+
+Create own or update existing *-actions.yml under `.github/workflows/` using section `Apply Actions`. For example:
+
+```bash
+gh api -X PUT "/repos/${OWNER}/${REPO}/actions/permissions" \
+  -H "Accept: application/vnd.github+json" \
+  -F enabled=true \
+  -f allowed_actions=all
+```
