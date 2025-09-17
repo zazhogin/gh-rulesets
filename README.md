@@ -3,13 +3,9 @@
 This repository automatically applies rulesets and Actions settings to repositories 
 based on a gh search query, on a schedule.
 
----
-
 ## Prerequisites
 
 Make sure to [create a personal access token](https://github.com/settings/tokens) with the admin scopes named `POLICY_TOKEN`.
-
----
 
 ## How to create GitHub rulesets
 
@@ -70,21 +66,36 @@ Rulesets example:
 
 ![enterprise-restrictions.png](docs/assets/enterprise-restrictions.png)
 
----
+## How to apply GitHub rulesets
 
+1. Add created before JSON rulesets under `policies/`.
+2. Create *-ruleset.yml under `.github/workflows/` using template:
+```yml
+name: GitOps Branch
 
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
 
-
-
-1. Create a ruleset manually in the GitHub UI (`Settings → Rulesets`).
-2. Export it to JSON using UI
-3. Add the JSON file under `policies/`.
-4. Reference it in the workflow (`rulesets-apply.yml`) with a `search_query` to specify repositories.
-Multiple rulesets supported.
+jobs:
+  apply:
+    uses: ./.github/workflows/rulesets-apply.yml
+    with:
+      search_query: org:digital-iq in:name zazhogin-ansible archived:false fork:false
+      policy_paths: |
+        policies/allowed-branch-names.json
+        policies/require-pr-for-dev.json
+    secrets: inherit
+```
+3. Переопределите поля:
+- `cron` расписание применения правил
+- `search_query` правило поиска репозиториев для [gh search](https://cli.github.com/manual/gh_search)
+- `policy_paths` массив ruleset
 
 The workflow will:
 - Find repositories matching the query (e.g. `org:digital-iq in:name ansible archived:false fork:false`).
-- Skip if the ruleset with the same name already exists.
+- Delete all existing rulest.
 - Apply the ruleset JSON if missing.
 
 ## Actions Settings
