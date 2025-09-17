@@ -26,12 +26,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh search repos "$SEARCH_REPOS" --json fullName -q '.[].fullName' > repos.txt
-          if [ ! -s repos.txt ]; then
-            echo "::error::No repositories matched the search: $SEARCH_REPOS"
-            exit 1
-          fi
-          echo "Found $(wc -l < repos.txt) repositories"
+          gh search repos $SEARCH_REPOS --json fullName -q '.[].fullName' > repos.txt
+          [ -s repos.txt ] || { echo "No repositories matched the search SEARCH_REPOS."; exit 1; }
 
       - name: Reset & apply rulesets
         shell: bash
