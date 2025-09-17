@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       rulesets_paths:
-        description: 'newline-separated list of policy JSON paths'
+        description: 'newline-separated list of rulesets JSON paths'
         required: true
         type: string
 
@@ -35,19 +35,19 @@ jobs:
           set -euo pipefail
           mapfile -t RULESETS < <(printf '%s\n' "$RULESETS_PATHS" | sed '/^\s*$/d')
 
-          POLICY_NAMES=()
+          RULESETS_NAMES=()
           for P in "${RULESETS[@]}"; do
-            [ -f "$P" ] || { echo "Policy file not found: $P"; exit 1; }
+            [ -f "$P" ] || { echo "Ruleset file not found: $P"; exit 1; }
             NAME=$(jq -r '.name // empty' "$P")
-            [ -n "$NAME" ] || { echo "Policy JSON must contain .name: $P"; exit 1; }
-            POLICY_NAMES+=("$NAME")
+            [ -n "$NAME" ] || { echo "Ruleset JSON must contain .name: $P"; exit 1; }
+            RULESETS_NAMES+=("$NAME")
           done
 
           while IFS= read -r FULL; do
             OWNER="${FULL%/*}"; REPO="${FULL#*/}"
             echo "::group::${FULL}"
             for i in "${!RULESETS[@]}"; do
-              P="${RULESETS[$i]}"; NAME="${POLICY_NAMES[$i]}"
+              R="${RULESETS[$i]}"; NAME="${RULESETS_NAMES[$i]}"
               RS_ID=$(gh api "/repos/${OWNER}/${REPO}/rulesets?per_page=100" \
                         --jq ".[] | select(.name==\"${NAME}\") | .id" 2>/dev/null || true)
               if [ -n "$RS_ID" ]; then
@@ -57,7 +57,7 @@ jobs:
               if gh api -X POST "/repos/${OWNER}/${REPO}/rulesets" --input "$P" >/dev/null 2>&1; then
                 echo "[created] ${FULL} :: ${NAME}"
               else
-                echo "::error::Create failed for ${FULL} (policy: ${P})"
+                echo "::error::Create failed for ${FULL} (ruleset: ${R})"
               fi
             done
             echo "::endgroup::"
