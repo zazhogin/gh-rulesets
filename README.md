@@ -27,15 +27,14 @@ Rulesets являются JSON:
 }
 ```
 
-JSON имеет два основных раздела, conditions и rules. Маппинга conditions к rules нет. Если мы хотим написать разные rules на разные ветки, указанные в 
-conditions, придется создать два rulesets.
+JSON has two main sections: `conditions` and `rules`. There is no direct mapping from `conditions` to `rules`.  
+If you want to apply different rules to different branches specified in `conditions`, you need to create two separate rulesets.
 
-Rulesets легко сгенерировать используя:
-
-1. Chat GPT, дополнительное обучение не требуется
+Rulesets can be easily generated using:
+1. ChatGPT (no additional training required)
 2. GitHub UI
-- Settings - Rules - Rulesets - New ruleset
-- Export ruleset
+    - Settings → Rules → Rulesets → New ruleset
+    - Export ruleset
 
 ![create-export-ruleset.png](docs/assets/create-export-ruleset.png)
 
@@ -62,7 +61,7 @@ Rulesets example:
 }
 ```
 
-**NOTES:** Некоторые ruleset требуют Enterprise подписку GitHub, например для стандартизации имен веток.
+**NOTES:** Some rulesets require a GitHub Enterprise subscription, for example to enforce branch naming standards.
 
 ![enterprise-restrictions.png](docs/assets/enterprise-restrictions.png)
 
@@ -88,10 +87,10 @@ jobs:
         policies/require-pr-for-dev.json
     secrets: inherit
 ```
-3. Переопределите поля:
-- `cron` расписание применения правил
-- `search_query` правило поиска репозиториев для [gh search](https://cli.github.com/manual/gh_search)
-- `policy_paths` массив ruleset
+3. Override the following fields:
+- `cron` — schedule for applying rules
+- `search_query` — repository search rule for gh search
+- `policy_paths` — list of rulesets
 
 The workflow will:
 - Find repositories matching the query (e.g. `org:digital-iq in:name ansible archived:false fork:false`).
