@@ -3,11 +3,11 @@ name: Apply Rulesets
 on:
   workflow_call:
     inputs:
-      search_query:
+      search_repos:
         description: 'gh search repos query, e.g. org:digital-iq is:private'
         required: true
         type: string
-      policy_paths:
+      rulesets_paths:
         description: 'newline-separated list of policy JSON paths'
         required: true
         type: string
@@ -16,9 +16,9 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.POLICY_TOKEN != '' && secrets.POLICY_TOKEN || github.token }}
-      QUERY:         ${{ inputs.search_query }}
-      POLICIES_RAW:  ${{ inputs.policy_paths }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN != '' && secrets.GH_TOKEN || github.token }}
+      SEARCH_REPOS:    ${{ inputs.search_repos }}
+      RULESETS_PATHS:  ${{ inputs.rulesets_paths }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,17 +26,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh search repos $QUERY --json fullName -q '.[].fullName' > repos.txt
-          [ -s repos.txt ] || { echo "No repositories matched the search query."; exit 1; }
+          gh search repos $SEARCH_REPOS --json fullName -q '.[].fullName' > repos.txt
+          [ -s repos.txt ] || { echo "No repositories matched the search SEARCH_REPOS."; exit 1; }
 
-      - name: Apply policies
+      - name: Apply rulesets
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t POLICIES < <(printf '%s\n' "$POLICIES_RAW" | sed '/^\s*$/d')
+          mapfile -t RULESETS < <(printf '%s\n' "$RULESETS_PATHS" | sed '/^\s*$/d')
 
           POLICY_NAMES=()
-          for P in "${POLICIES[@]}"; do
+          for P in "${RULESETS[@]}"; do
             [ -f "$P" ] || { echo "Policy file not found: $P"; exit 1; }
             NAME=$(jq -r '.name // empty' "$P")
             [ -n "$NAME" ] || { echo "Policy JSON must contain .name: $P"; exit 1; }
@@ -46,8 +46,8 @@ jobs:
           while IFS= read -r FULL; do
             OWNER="${FULL%/*}"; REPO="${FULL#*/}"
             echo "::group::${FULL}"
-            for i in "${!POLICIES[@]}"; do
-              P="${POLICIES[$i]}"; NAME="${POLICY_NAMES[$i]}"
+            for i in "${!RULESETS[@]}"; do
+              P="${RULESETS[$i]}"; NAME="${POLICY_NAMES[$i]}"
               RS_ID=$(gh api "/repos/${OWNER}/${REPO}/rulesets?per_page=100" \
                         --jq ".[] | select(.name==\"${NAME}\") | .id" 2>/dev/null || true)
               if [ -n "$RS_ID" ]; then

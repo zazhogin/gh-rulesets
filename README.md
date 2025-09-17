@@ -5,7 +5,7 @@ based on a gh search query, on a schedule.
 
 ## Prerequisites
 
-Make sure to [create a personal access token](https://github.com/settings/tokens) with the admin scopes named `POLICY_TOKEN`.
+Make sure to [create a personal access token](https://github.com/settings/tokens) with the admin scopes named `GH_TOKEN`.
 
 ## How to create GitHub rulesets
 
@@ -67,7 +67,7 @@ Rulesets example:
 
 ## How to apply GitHub rulesets
 
-1. Add created before JSON rulesets under `policies/`.
+1. Add created before JSON rulesets under `rulesets/`.
 2. Create *-ruleset.yml under `.github/workflows/` using template:
 ```yml
 name: GitOps Branch
@@ -81,21 +81,23 @@ jobs:
   apply:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
-      search_query: org:digital-iq in:name zazhogin-ansible archived:false fork:false
-      policy_paths: |
-        policies/allowed-branch-names.json
-        policies/require-pr-for-dev.json
+      search_repos: org:digital-iq in:name zazhogin-ansible archived:false fork:false
+      rulesets_paths: |
+        rulesets/allowed-branch-names.json
+        rulesets/require-pr-for-dev.json
     secrets: inherit
 ```
 3. Override the following fields:
 - `cron` — schedule for applying rules
-- `search_query` — repository search rule for gh search
-- `policy_paths` — list of rulesets
+- `search_repos` — repository search rule for gh search
+- `rulesets_paths` — list of rulesets
 
 The workflow will:
 - Find repositories matching the query (e.g. `org:digital-iq in:name ansible archived:false fork:false`).
 - Delete all existing rulest.
 - Apply the ruleset JSON if missing.
+
+**NOTES:** gh search repos doesn't support regex, but supports [jq expressions](https://cli.github.com/manual/gh_search_repos).
 
 ## How to create GitHub Actions REST API calls
 

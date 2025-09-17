@@ -9,8 +9,8 @@ jobs:
   apply:
     uses: ./.github/workflows/rulesets-apply.yml
     with:
-      search_query: org:digital-iq in:name zazhogin-ansible archived:false fork:false
-      policy_paths: |
-        policies/allowed-branch-names.json
-        policies/require-pr-for-dev.json
+      search_repos: org:digital-iq in:name zazhogin-ansible archived:false fork:false
+      rulesets_paths: |
+        rulesets/allowed-branch-names.json
+        rulesets/require-pr-for-dev.json
     secrets: inherit
